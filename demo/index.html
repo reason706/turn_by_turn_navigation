@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenNav Prototype (MapLibre + OSRM)</title>
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    :root { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { margin: 0; display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+    .panel { border-right: 1px solid #e5e7eb; padding: 16px; overflow: auto; background: #fff; }
+    #map { height: 100vh; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    input, button, select { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; }
+    button { cursor: pointer; background: #2563eb; color: white; border: none; }
+    button.secondary { background: #6b7280; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .hint { color: #4b5563; font-size: 13px; margin-bottom: 12px; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #dbeafe; color: #1e3a8a; font-size: 12px; margin-bottom: 10px; }
+    .steps { margin-top: 12px; display: grid; gap: 8px; }
+    .step { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; font-size: 14px; }
+    .metric { margin: 6px 0; font-weight: 600; }
+    @media (max-width: 900px) {
+      body { grid-template-columns: 1fr; grid-template-rows: 45vh 55vh; }
+      #map { height: 55vh; }
+      .panel { border-right: none; border-bottom: 1px solid #e5e7eb; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="panel">
+    <h1>OpenNav Prototype</h1>
+    <div class="badge">Vector map (MapLibre)</div>
+    <p class="hint">Click map to place <b>Start</b> and <b>End</b>, then route. This is a working base you can evolve into full turn-by-turn navigation.</p>
+
+    <div class="row">
+      <input id="start" placeholder="Start: lat, lon" readonly />
+    </div>
+    <div class="row">
+      <input id="end" placeholder="End: lat, lon" readonly />
+    </div>
+    <div class="row">
+      <button id="routeBtn" disabled>Get Route</button>
+      <button class="secondary" id="clearBtn">Clear</button>
+    </div>
+
+    <div class="row">
+      <select id="profile">
+        <option value="driving">Driving</option>
+        <option value="cycling">Cycling</option>
+        <option value="walking">Walking</option>
+      </select>
+    </div>
+
+    <div id="summary" class="metric">No route yet.</div>
+    <div id="steps" class="steps"></div>
+  </aside>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: [144.9631, -37.8136],
+      zoom: 12
+    });
+    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+
+    const state = { start: null, end: null, startMarker: null, endMarker: null };
+
+    const startInput = document.getElementById('start');
+    const endInput = document.getElementById('end');
+    const routeBtn = document.getElementById('routeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const summary = document.getElementById('summary');
+    const stepsEl = document.getElementById('steps');
+    const profileEl = document.getElementById('profile');
+
+    function fmtCoord(c) { return `${c[1].toFixed(5)}, ${c[0].toFixed(5)}`; }
+    function meters(m) { return m > 1000 ? `${(m/1000).toFixed(1)} km` : `${Math.round(m)} m`; }
+    function duration(s) {
+      const min = Math.round(s / 60);
+      if (min < 60) return `${min} min`;
+      return `${Math.floor(min/60)} h ${min % 60} min`;
+    }
+
+    map.on('click', (e) => {
+      const pt = [e.lngLat.lng, e.lngLat.lat];
+      if (!state.start) {
+        state.start = pt;
+        if (state.startMarker) state.startMarker.remove();
+        state.startMarker = new maplibregl.Marker({ color: '#2563eb' }).setLngLat(pt).addTo(map);
+        startInput.value = fmtCoord(pt);
+      } else if (!state.end) {
+        state.end = pt;
+        if (state.endMarker) state.endMarker.remove();
+        state.endMarker = new maplibregl.Marker({ color: '#dc2626' }).setLngLat(pt).addTo(map);
+        endInput.value = fmtCoord(pt);
+      } else {
+        clearAll();
+        state.start = pt;
+        state.startMarker = new maplibregl.Marker({ color: '#2563eb' }).setLngLat(pt).addTo(map);
+        startInput.value = fmtCoord(pt);
+      }
+      routeBtn.disabled = !(state.start && state.end);
+    });
+
+    clearBtn.addEventListener('click', clearAll);
+    routeBtn.addEventListener('click', fetchRoute);
+
+    function clearAll() {
+      state.start = null; state.end = null;
+      if (state.startMarker) state.startMarker.remove();
+      if (state.endMarker) state.endMarker.remove();
+      state.startMarker = null; state.endMarker = null;
+      startInput.value = ''; endInput.value = '';
+      routeBtn.disabled = true;
+      summary.textContent = 'No route yet.';
+      stepsEl.innerHTML = '';
+      if (map.getSource('route')) {
+        map.removeLayer('route-line');
+        map.removeSource('route');
+      }
+    }
+
+    async function fetchRoute() {
+      const profile = profileEl.value;
+      const [sLng, sLat] = state.start;
+      const [eLng, eLat] = state.end;
+      const url = `https://router.project-osrm.org/route/v1/${profile}/${sLng},${sLat};${eLng},${eLat}?overview=full&geometries=geojson&steps=true`;
+
+      summary.textContent = 'Routing...';
+      stepsEl.innerHTML = '';
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.code !== 'Ok' || !data.routes?.length) throw new Error('No route');
+
+        const route = data.routes[0];
+        renderRoute(route.geometry);
+        renderSteps(route.legs[0].steps);
+        summary.textContent = `ETA ${duration(route.duration)} • Distance ${meters(route.distance)}`;
+
+        const coords = route.geometry.coordinates;
+        const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+        map.fitBounds(bounds, { padding: 50 });
+      } catch (err) {
+        summary.textContent = 'Routing failed. Try a different pair of points.';
+      }
+    }
+
+    function renderRoute(geometry) {
+      if (map.getSource('route')) {
+        map.getSource('route').setData({ type: 'Feature', geometry, properties: {} });
+        return;
+      }
+      map.addSource('route', { type: 'geojson', data: { type: 'Feature', geometry, properties: {} } });
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        paint: { 'line-color': '#2563eb', 'line-width': 6, 'line-opacity': 0.9 }
+      });
+    }
+
+    function renderSteps(steps) {
+      stepsEl.innerHTML = '';
+      steps.slice(0, 12).forEach((s, i) => {
+        const div = document.createElement('div');
+        div.className = 'step';
+        const instr = s.maneuver.instruction || `${s.maneuver.type} ${s.maneuver.modifier || ''}`;
+        div.innerHTML = `<b>${i+1}.</b> ${instr}<br><small>${meters(s.distance)}</small>`;
+        stepsEl.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
