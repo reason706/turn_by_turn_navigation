@@ -1,12 +1,6 @@
-# Turn-by-turn Navigation (React + MapLibre)
+# OpenNav React Web App
 
-Advanced React prototype for high-performance turn-by-turn navigation.
-
-## Stack
-
-- **Map engine:** MapLibre GL JS
-- **Routing engine (demo endpoint):** OSRM public API
-- **UI runtime:** React via module CDN (no local build step)
+This is now a **React-based web app** (not vanilla JS) for advanced turn-by-turn navigation.
 
 ## Run
 
@@ -17,15 +11,16 @@ python3 -m http.server 4173
 
 Open `http://localhost:4173`.
 
-## Features implemented
+## Advanced features included
 
-- Multiple map view options: vector, street, dark mode
-- Start/end waypoint selection by map click
-- Current location permission flow (set current position as start)
-- Live GPS tracking (`watchPosition`) with breadcrumb trail
-- Optional follow-GPS camera mode
-- Route rendering with turn-by-turn instructions
-- Navigation status panel: turn left/right, roundabout labels, and lane guidance when provided by route intersections
-- Vehicle simulation with user speed slider
-- Bottom trip ETA panel (arrival time + remaining duration + remaining distance)
-- Progress bar for trip completion
+- React app with hooks/state lifecycle for navigation flow
+- Multiple map views (vector, street, dark)
+- Start/end by map tap or place search (Photon)
+- Current location permission flow (`getCurrentPosition`)
+- Live location tracking (`watchPosition`) + breadcrumb path
+- GPS follow toggle
+- Routing with OSRM (`steps=true` + annotations)
+- Vehicle simulation with speed slider
+- Turn status (left/right/roundabout/U-turn) + next step preview
+- Lane guidance when route lane metadata is available
+- Bottom ETA panel with arrival time, remaining duration/distance, and trip progress bar
