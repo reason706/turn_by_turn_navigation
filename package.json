@@ -1,0 +1,28 @@
+{
+  "name": "maplibre-valhalla-navigation",
+  "version": "1.0.0",
+  "description": "Beautiful turn-by-turn navigation system using MapLibre GL JS and Valhalla routing",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "webpack serve --mode development",
+    "build": "webpack --mode production",
+    "type-check": "tsc --noEmit",
+    "serve": "python3 -m http.server 8080 --directory dist"
+  },
+  "dependencies": {
+    "maplibre-gl": "^4.0.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^4.15.0",
+    "ts-loader": "^9.4.0",
+    "css-loader": "^6.8.0",
+    "style-loader": "^3.3.0",
+    "sass-loader": "^13.3.0",
+    "sass": "^1.68.0"
+  }
+}

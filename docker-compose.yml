@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # MapLibre Navigation App
+  navigation-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maplibre-navigation
+    ports:
+      - "8080:8080"
+    environment:
+      - VALHALLA_URL=http://valhalla:8002
+      - NOMINATIM_URL=http://nominatim:8001
+    depends_on:
+      - valhalla
+      - nominatim
+    networks:
+      - navigation-network
+    restart: unless-stopped
+
+  # Valhalla Routing Engine
+  valhalla:
+    image: valhalla/valhalla:latest
+    container_name: valhalla-router
+    ports:
+      - "8002:8002"
+    volumes:
+      - valhalla_data:/data
+      - valhalla_cache:/valhalla/tile_data
+    environment:
+      - "tile_url=https://tile.openstreetmap.org/{z}/{x}/{y}.pbf"
+    networks:
+      - navigation-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/route"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nominatim Geocoding (lightweight option)
+  # For production, use Photon instead (doesn't require setup)
+  nominatim:
+    image: mediagis/nominatim:latest
+    container_name: nominatim-geocoding
+    ports:
+      - "8001:80"
+    volumes:
+      - nominatim_data:/var/lib/postgresql/12/main
+    environment:
+      - "PBF_URL=https://planet.openstreetmap.org/pbf/europe/france-latest.osm.pbf"
+      - "IMPORT_WIKIPEDIA=false"
+      - "IMPORT_US_POSTCODES=false"
+      - "IMPORT_GB_POSTCODES=false"
+    networks:
+      - navigation-network
+    restart: unless-stopped
+    # Note: First startup takes time for data import
+    # Use public Photon/Nominatim if faster startup is priority
+
+volumes:
+  valhalla_data:
+    driver: local
+  valhalla_cache:
+    driver: local
+  nominatim_data:
+    driver: local
+
+networks:
+  navigation-network:
+    driver: bridge

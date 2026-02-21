@@ -1,0 +1,858 @@
+/**
+ * Main Styles for Navigation App
+ */
+
+$primary-color: #0084ff;
+$success-color: #10b981;
+$danger-color: #ef4444;
+$warning-color: #f59e0b;
+$dark-bg: #1f2937;
+$light-bg: #f3f4f6;
+$border-color: #e5e7eb;
+$text-primary: #111827;
+$text-secondary: #6b7280;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: $light-bg;
+  color: $text-primary;
+}
+
+#app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+#map {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  
+  .maplibregl-canvas {
+    outline: none;
+  }
+}
+
+// Panels
+#search-container,
+#control-panel,
+#nav-panel,
+#route-input-panel {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+}
+
+#route-input-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 400px;
+  z-index: 50;
+  max-height: 50vh;
+  overflow-y: auto;
+  display: block !important;
+  visibility: visible !important;
+  
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    top: 16px;
+  }
+}
+
+#search-container {
+  display: none;
+}
+
+#control-panel {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  width: 280px;
+  z-index: 10;
+  
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    bottom: 16px;
+    left: 16px;
+  }
+}
+
+#nav-panel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 380px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  z-index: 20;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  
+  &.visible {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  @media (max-width: 768px) {
+    width: calc(100% - 32px);
+    right: 16px;
+    bottom: 380px;
+  }
+}
+
+// Search Box
+.search-box {
+  .search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+    .search-input {
+      flex: 1;
+      padding: 12px 12px 12px 16px;
+      border: 2px solid $border-color;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+      }
+      
+      &::placeholder {
+        color: $text-secondary;
+      }
+    }
+    
+    .search-clear {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: $text-secondary;
+      font-size: 16px;
+      padding: 4px 8px;
+      transition: color 0.2s;
+      
+      &:hover {
+        color: $text-primary;
+      }
+    }
+  }
+  
+  .search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid $border-color;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 20;
+    
+    .search-loading {
+      padding: 16px;
+      text-align: center;
+      color: $text-secondary;
+      font-size: 14px;
+    }
+    
+    .search-result {
+      padding: 12px 16px;
+      border-bottom: 1px solid $border-color;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      &:hover {
+        background-color: $light-bg;
+      }
+      
+      .result-name {
+        font-weight: 600;
+        color: $text-primary;
+        margin-bottom: 4px;
+      }
+      
+      .result-address {
+        font-size: 12px;
+        color: $text-secondary;
+      }
+    }
+  }
+}
+
+// Route Input Panel
+.route-input-panel {
+  .route-input-header {
+    margin-bottom: 16px;
+    
+    h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: $text-primary;
+    }
+  }
+  
+  .route-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  
+  .input-group {
+    position: relative;
+    
+    .label-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+    
+    .input-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: $text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn-use-location {
+      padding: 4px 8px;
+      font-size: 11px;
+      background: none;
+      border: 1px solid $border-color;
+      border-radius: 4px;
+      color: $text-secondary;
+      cursor: pointer;
+      transition: all 0.2s;
+      
+      &:hover {
+        background: $light-bg;
+        color: $primary-color;
+        border-color: $primary-color;
+      }
+    }
+    
+    .input-wrapper {
+      position: relative;
+      
+      input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid $border-color;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+        
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+        }
+        
+        &::placeholder {
+          color: $text-secondary;
+        }
+      }
+    }
+  }
+  
+  .origin-suggestions,
+  .dest-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid $border-color;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    
+    .suggestion {
+      padding: 10px 12px;
+      border-bottom: 1px solid $border-color;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      &:hover {
+        background-color: $light-bg;
+      }
+      
+      .suggestion-name {
+        font-weight: 600;
+        font-size: 14px;
+        color: $text-primary;
+        margin-bottom: 2px;
+      }
+      
+      .suggestion-address {
+        font-size: 12px;
+        color: $text-secondary;
+      }
+    }
+    
+    .suggestion-loading {
+      padding: 12px;
+      text-align: center;
+      color: $text-secondary;
+      font-size: 13px;
+    }
+    
+    .suggestion-empty {
+      padding: 12px;
+      text-align: center;
+      color: $text-secondary;
+      font-size: 13px;
+    }
+    
+    .suggestion-error {
+      padding: 12px;
+      text-align: center;
+      color: $danger-color;
+      font-size: 13px;
+    }
+  }
+  
+  .swap-locations {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid $border-color;
+    background: white;
+    cursor: pointer;
+    font-size: 18px;
+    color: $primary-color;
+    transition: all 0.3s;
+    z-index: 15;
+    
+    &:hover {
+      background: $light-bg;
+      border-color: $primary-color;
+    }
+  }
+  
+  .btn-route-request {
+    width: 100%;
+    padding: 12px;
+    background: $primary-color;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    
+    &:hover {
+      background: darken($primary-color, 10%);
+      box-shadow: 0 4px 8px rgba(0, 132, 255, 0.3);
+    }
+    
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}
+
+// Control Panel
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .label-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+// Button Styles
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  &.btn-primary {
+    background: $primary-color;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: darken($primary-color, 10%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 132, 255, 0.25);
+    }
+  }
+  
+  &.btn-danger {
+    background: $danger-color;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: darken($danger-color, 10%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+  }
+  
+  &.btn-secondary {
+    background: $light-bg;
+    color: $text-primary;
+    border: 1px solid $border-color;
+    
+    &:hover:not(:disabled) {
+      background: white;
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+}
+
+// Sliders and Selects
+.speed-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: $border-color;
+  outline: none;
+  -webkit-appearance: none;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: $primary-color;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 8px rgba(0, 132, 255, 0.3);
+    }
+  }
+  
+  &::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: $primary-color;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: scale(1.1);
+      box-shadow: 0 4px 8px rgba(0, 132, 255, 0.3);
+    }
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.style-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid $border-color;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+  }
+}
+
+// Status Panel
+.status-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid $border-color;
+  
+  .status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    
+    label {
+      font-weight: 600;
+      color: $text-secondary;
+    }
+    
+    .status-value,
+    .speed-status {
+      color: $text-primary;
+      font-weight: 600;
+    }
+  }
+}
+
+// Navigation Panel
+.navigation-panel {
+  h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+  
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-secondary;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.route-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: $light-bg;
+  border-radius: 8px;
+  
+  .info-item {
+    text-align: center;
+    
+    .label {
+      font-size: 11px;
+      font-weight: 600;
+      color: $text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    
+    .value {
+      font-size: 16px;
+      font-weight: 700;
+      color: $text-primary;
+    }
+  }
+}
+
+.progress-section {
+  margin-bottom: 20px;
+  
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: $border-color;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, $primary-color, $success-color);
+      width: 0;
+      transition: width 0.3s ease;
+    }
+  }
+  
+  .progress-text {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: $text-secondary;
+    
+    .progress-percentage {
+      font-weight: 600;
+      color: $text-primary;
+    }
+  }
+}
+
+.instructions-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: $light-bg;
+  border-radius: 8px;
+  border-left: 4px solid $primary-color;
+  
+  .current-instruction {
+    display: flex;
+    gap: 12px;
+    
+    .instruction-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      background: $primary-color;
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 600;
+    }
+    
+    .instruction-text {
+      flex: 1;
+      
+      .main-instruction {
+        font-weight: 600;
+        font-size: 14px;
+        color: $text-primary;
+        margin-bottom: 4px;
+      }
+      
+      .next-instruction {
+        font-size: 13px;
+        color: $text-secondary;
+      }
+    }
+  }
+}
+
+.steps-list {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid $border-color;
+  
+  h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-secondary;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .steps-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    
+    .step-item {
+      display: flex;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 6px;
+      border-left: 3px solid $border-color;
+      background: $light-bg;
+      transition: all 0.2s;
+      
+      &.active {
+        border-left-color: $primary-color;
+        background: lighten($primary-color, 48%);
+        font-weight: 600;
+      }
+      
+      &:hover {
+        background: darken($light-bg, 5%);
+      }
+      
+      .step-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: $primary-color;
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      
+      .step-content {
+        flex: 1;
+        
+        .step-instruction {
+          font-size: 13px;
+          font-weight: 600;
+          color: $text-primary;
+          margin-bottom: 3px;
+        }
+        
+        .step-distance {
+          font-size: 12px;
+          color: $text-secondary;
+          margin-bottom: 2px;
+        }
+        
+        .step-name {
+          font-size: 11px;
+          color: darken($text-secondary, 10%);
+          font-style: italic;
+        }
+      }
+    }
+  }
+}
+
+// Deviation Warning
+.deviation-warning {
+  padding: 8px 12px;
+  background: lighten($warning-color, 30%);
+  color: darken($warning-color, 30%);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+  margin-top: 8px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+// Notifications
+.notification {
+  position: fixed;
+  bottom: 100px;
+  right: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s ease;
+  z-index: 100;
+  
+  &.notification-show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  &.notification-success {
+    background: $success-color;
+    color: white;
+  }
+  
+  &.notification-error {
+    background: $danger-color;
+    color: white;
+  }
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $border-color;
+  border-radius: 3px;
+  
+  &:hover {
+    background: $text-secondary;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  #nav-panel {
+    width: calc(100% - 32px);
+    max-height: 50vh;
+  }
+  
+  .route-info {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .search-results {
+    max-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  #search-container,
+  #control-panel,
+  #nav-panel {
+    width: calc(100% - 16px);
+  }
+  
+  .btn {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
